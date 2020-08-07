@@ -5,11 +5,8 @@ from collections import deque
 # orientation in constructor should be from the Constants class.
 
 
-class Branch(object):
+class Branch(object):  # not a Surface itself, but more of a Surface Traffic Controller wrapping domino_list
     def __init__(self, orientation: tuple, display, parent, spinner_val=None):
-        # super(Branch, self).__init__()
-        # self.is_starter = is_starter
-        self.is_empty = True
         self.display = display
         self.parent = parent
         self.domino_list = deque()
@@ -17,35 +14,23 @@ class Branch(object):
         self.orientation = orientation
         self.drop_areas = dict()
         self.drop_area = None
-        self.outside_val = spinner_val
         self.center = None
+        self.outside_val = None
         self.is_starter = False
         self.center_dim = self.display.BOARD_HEIGHT // 2, self.display.WINDOW_WIDTH // 2
         if spinner_val is None:
-            left_rect = pygame.Rect((self.display.WINDOW_WIDTH // 2) - self.length()//2 - self.display.DROP_AREA_SIDE,
-                                    (self.display.BOARD_HEIGHT // 2) - (self.display.DROP_AREA_SIDE // 2),
-                                    self.display.DROP_AREA_SIDE, self.display.DROP_AREA_SIDE)
-            right_rect = pygame.Rect((self.display.WINDOW_WIDTH // 2) + self.length() // 2,
-                                     (self.display.BOARD_HEIGHT // 2) - (self.display.DROP_AREA_SIDE // 2),
-                                     self.display.DROP_AREA_SIDE, self.display.DROP_AREA_SIDE)
-            self.drop_areas[Constants.LEFT] = left_rect
-            self.drop_areas[Constants.RIGHT] = right_rect
             self.is_starter = True
         else:
-            self.drop_area = pygame.Rect(self.center_dim[0] + (self.length() * self.orientation[0]),
-                                         self.center_dim[1] + (self.length() * self.orientation[1]),
-                                         self.display.DROP_AREA_SIDE,
-                                         self.display.DROP_AREA_SIDE
-                                         )
-
-    def add_domino(self, domino, orientation: int):
-        self.domino_list.append((domino, orientation))
-        # self.orientations.append(orientation)
-        pass
+            self.outside_val = spinner_val[0]
 
     def play(self, domino, orientation):
         self.domino_list.append((domino, orientation))
-        pass
+        if orientation == 0:
+            self.outside_val = domino[1]
+        elif orientation == 2:
+            self.outside_val = domino[0]
+        else:  # orientation == 1  # is a double
+            self.outside_val = domino[0]  # because they're both the same
 
     def play_left(self, domino, orientation):
         self.domino_list.appendleft((domino, orientation))
@@ -57,37 +42,75 @@ class Branch(object):
 
     def arrange(self, dominoes):
         if self.is_starter:
-            tl_x_series = list(range((self.display.WINDOW_WIDTH // 2) - (self.length() // 2)
-                                - self.display.BOARD_DOMINO_HEIGHT // 2,
-                                (self.display.WINDOW_WIDTH // 2) + (self.length() // 2),
-                                (self.display.DOMINO_HEIGHT + self.display.DOMINO_PADDING)
-                                ))
-            for (domino, orientation), x in zip(self.domino_list, tl_x_series):
-                dominoes[domino] = pygame.transform.rotate(dominoes[domino], 1 * 90)
-                # dominoes[domino].set_rotate(Constants.ORIENTATIONS.index(self.orientation) + orientation - 1)
-                dominoes[domino].set_rect(pygame.Rect(x + (self.display.BOARD_DOMINO_HEIGHT // 2), (self.display.BOARD_HEIGHT // 2) - (self.display.BOARD_DOMINO_WIDTH // 2)))
+            x_series = list(range((self.display.WINDOW_WIDTH // 2) - (self.length() // 2)
+                                  + (self.display.BOARD_LONG_DIM // 2),
+                                  (self.display.WINDOW_WIDTH // 2) + (self.length() // 2)
+                                  - (self.display.BOARD_LONG_DIM // 2) + self.display.DOMINO_PADDING + 1,
+                                  (self.display.BOARD_LONG_DIM + self.display.DOMINO_PADDING)))
+            for (domino, orientation), x in zip(self.domino_list, x_series):
+                dominoes[domino].center(x,
+                                        (self.display.BOARD_HEIGHT // 2),
+                                        (Constants.ORIENTATIONS.index(self.orientation) + orientation) % 4)
+
+            self.drop_areas[Constants.LEFT] = \
+                pygame.Rect(self.display.BOARD_CENTER[0] - (self.length()//2) - self.display.DOMINO_PADDING
+                            - self.display.DROP_AREA_SIDE,
+                            self.display.BOARD_CENTER[1] - (self.display.DROP_AREA_SIDE // 2),
+                            self.display.DROP_AREA_SIDE,
+                            self.display.DROP_AREA_SIDE)
+            self.drop_areas[Constants.RIGHT] = \
+                pygame.Rect(self.display.BOARD_CENTER[0] + (self.length() // 2)
+                            + self.display.DOMINO_PADDING,
+                            self.display.BOARD_CENTER[1] - (self.display.DROP_AREA_SIDE // 2),
+                            self.display.DROP_AREA_SIDE,
+                            self.display.DROP_AREA_SIDE)
         else:
-            pass
-
-    def center_value(self, center_dim, index, orientation):
-        return (self.display.domino_padding * index) \
-               + sum(list(map(lambda x:
-                              self.display.DOMINO_HEIGHT if x % 2 == 0 else self.display.DOMINO_WIDTH,
-                              self.orientations[:index])))
-
-    def drop_area_tl(self):  # TODO figure out this calculation
-        return
+            self.drop_area = pygame.Rect(0, 0, self.display.DROP_AREA_SIDE, self.display.DROP_AREA_SIDE)
+            self.drop_area.center = \
+                self.display.BOARD_CENTER[0] \
+                + (self.orientation[0]
+                   * (self.length()
+                      + (self.display.DROP_AREA_SIDE // 2)
+                      + (self.display.BOARD_SHORT_DIM // 2)
+                      + ((2 if len(self.domino_list) > 0 else 1) * self.display.DOMINO_PADDING))),\
+                self.display.BOARD_CENTER[1]\
+                + (self.orientation[1]
+                   * (self.length()
+                      + (self.display.DROP_AREA_SIDE // 2)
+                      + (self.display.BOARD_LONG_DIM // 2)
+                      + ((2 if len(self.domino_list) > 0 else 1) * self.display.DOMINO_PADDING)))
+            first_position = \
+                ((self.display.BOARD_CENTER[0] +
+                 (self.orientation[0] *
+                  (((self.display.BOARD_SHORT_DIM + self.display.BOARD_LONG_DIM)//2) +
+                  self.display.DOMINO_PADDING))),
+                 (self.display.BOARD_CENTER[1] +
+                  (self.orientation[1] * (self.display.BOARD_LONG_DIM + self.display.DOMINO_PADDING))))
+            pairs = [(self.domino_list[i][1], self.domino_list[i+1][1]) for i in range(len(self.domino_list) - 1)]
+            if len(self.domino_list) > 0:
+                dominoes[self.domino_list[0][0]].\
+                    center(first_position[0], first_position[1],
+                           (Constants.ORIENTATIONS.index(self.orientation) + self.domino_list[0][1]) % 4)
+            if len(self.domino_list) > 1:
+                additions = [(((self.display.BOARD_LONG_DIM + self.display.BOARD_SHORT_DIM)//2) +
+                              self.display.DOMINO_PADDING) if
+                             (pair[0] == 1 or pair[1] == 1) else
+                             (self.display.BOARD_LONG_DIM + self.display.DOMINO_PADDING) for pair in pairs]
+                positions = [((first_position[0] + (self.orientation[0] * sum(additions[:i+1]))),
+                              (first_position[1] + (self.orientation[1] * (sum(additions[:i+1])))))
+                             for i in range(len(additions))]
+                for i in range(len(self.domino_list) - 1):
+                    dominoes[self.domino_list[i+1][0]].center(positions[i][0],
+                                                            positions[i][1],
+                                                            (Constants.ORIENTATIONS.index(self.orientation)
+                                                             + self.domino_list[i + 1][1]) % 4)
 
     def length(self):
-        length = (self.display.DOMINO_PADDING * (len(self.domino_list) + 1 if self.is_starter is None else 0)) \
-                 + sum(list(map(lambda x: self.display.DOMINO_HEIGHT if x[1] % 2 == 0 else self.display.DOMINO_WIDTH,
-                                self.domino_list)))
+        length = (self.display.DOMINO_PADDING * ((len(self.domino_list) - 1) if len(self.domino_list) > 0 else 0)) \
+                 + sum(list(map(
+                    lambda x: self.display.BOARD_LONG_DIM if x[1] % 2 == 0
+                    else self.display.BOARD_SHORT_DIM, self.domino_list)))
         return length
 
-    def outside_value(self):  # TODO does not account for starting branch
-        if self.orientations[-1]:
-            return self.domino_list[-1][0] * 2
-        else:
-            # TODO needs checking, might be the reverse orientation
-            return self.domino_list[-1][0] if self.orientations[-1] == 0 else self.domino_list[-1][1]
-        pass
+    # def outside_value(self):
+    #     return self.outside_val

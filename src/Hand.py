@@ -11,7 +11,6 @@ class Hand(pygame.Surface):
         self.fill(Constants.WHITE)
         self.dom_width = display.DOMINO_WIDTH
         self.dom_height = display.DOMINO_HEIGHT
-        # self.domino_dict = domino_dict
 
     def set_dom_width(self, width):
         self.dom_width = width
@@ -29,10 +28,6 @@ class Hand(pygame.Surface):
 
     def remove(self, dom: tuple):
         self.hand.remove(dom)
-        # del self.domino_container[ind]
-
-    def get_rect(self):
-        return self.rect
 
 
 def spacing(dimension, num_objs, obj_dim, obj_gap):

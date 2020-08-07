@@ -7,7 +7,8 @@ class Constants:
     UP = (0, -1)
     LEFT = (-1, 0)
     DOWN = (0, 1)
-    ORIENTATIONS = [DOWN, LEFT, UP, RIGHT]  # sets an ordering
+    # ORIENTATIONS = [DOWN, LEFT, UP, RIGHT]  # sets an ordering
+    ORIENTATIONS = [RIGHT, UP, LEFT, DOWN]
     # game modes
     FFA = 0
     TEAM = 1
@@ -18,7 +19,8 @@ class Constants:
     PERFECT_KNOWLEDGE = 3
     # useful for some domino AI math and generation
     FULL_SET = {(j, i) for i in range(7) for j in range(i+1)}
-
+    # Colors. Maybe I'll make a color setting panel where you can set the fills of different surfaces, and you can
+    # define your own palette that gets saved to a pickled configuration object.
     AQUA = 0, 255, 255
     BLACK = 0, 0, 0
     BLUE = 0, 0, 255

@@ -1,6 +1,8 @@
 import pygame
 from Constants import Constants
 from Branch import Branch
+# TODO rewrite this coherently as a State Machine. For better code organization if anything (keeps different state
+# TODO handling code together, by state, rather than by function)
 
 
 class Board(pygame.Surface):
@@ -15,19 +17,12 @@ class Board(pygame.Surface):
         # self.colliders = {orientation: None for orientation in Constants.ORIENTATIONS}
         self.branches = {orientation: None for orientation in Constants.ORIENTATIONS}
         self.spinner = None
-        pass
 
     def played(self):
         return self.played_dominoes
 
     def reset(self):
         self.played_dominoes = {}
-
-    def get_rect(self):
-        return self.rect
-
-    def colliders(self):
-        return self.colliders
 
     def arrange(self, dominoes):
         if self.state == 0:
@@ -44,7 +39,7 @@ class Board(pygame.Surface):
                 self.branches[orientation].arrange(dominoes)
             pass
 
-    def transition(self, out_num, dominoes, starter=None, ztwo_branch=None, spinner=None):
+    def transition(self, out_num, ztwo_branch=None, spinner=None):
         if out_num == 0:
             for key in self.branches.keys():
                 self.branches[key] = None
@@ -55,45 +50,43 @@ class Board(pygame.Surface):
                 self.branches[orientation] = None
 
         elif out_num == 2:
+            self.spinner = spinner
             if self.state == 0:
-                self.branches[Constants.LEFT] = Branch(Constants.LEFT, self.display, self)
-                self.branches[Constants.RIGHT] = Branch(Constants.RIGHT, self.display, self)
-                # dominoes[spinner].set_rect(self.display.spinner_rect)
+                self.branches[Constants.LEFT] = Branch(Constants.LEFT, self.display, self, spinner_val=spinner)
+                self.branches[Constants.RIGHT] = Branch(Constants.RIGHT, self.display, self, spinner_val=spinner)
             elif self.state == 1:
-                self.branches[Constants.LEFT] = Branch(Constants.LEFT, self.display, self)
-                self.branches[Constants.RIGHT] = Branch(Constants.RIGHT, self.display, self)
-                passed_dominoes = self.starter_branch.domino_list
-                passed_orientations = self.starter_branch.orientations
+                self.branches[Constants.LEFT] = Branch(Constants.LEFT, self.display, self, spinner_val=spinner)
+                self.branches[Constants.RIGHT] = Branch(Constants.RIGHT, self.display, self, spinner_val=spinner)
                 if ztwo_branch == Constants.LEFT:
                     for i in range(len(self.branches['starter'].domino_list)):
-                        domino, orientation = self.branches[i]
-                        self.branches[Constants.RIGHT].play(domino, orientation)
-                    self.branches[Constants.RIGHT].rescale()
+                        domino, orientation = self.branches['starter'].domino_list[i]
+                        self.branches[Constants.RIGHT].\
+                            play(domino, orientation)
+                    self.branches[Constants.LEFT].outside_val = spinner[0]
                 elif ztwo_branch == Constants.RIGHT:
-                    for i in range(len(self.branches['starter'].domino_list), -1, -1):
-                        domino, orientation = self.branches[i]
-                        self.branches[Constants.RIGHT].play(domino, orientation)
-                    self.branches[Constants.LEFT].domino_list = reversed(self.branches['starter'].domino_list.copy())
-                    self.branches[Constants.LEFT].orientations = list(map(lambda z: z if z == 2 else (z+2) % 4,
-                                                                          self.branches['starter'].orientations))
-                    self.branches[Constants.LEFT].rescale()
-                pass
-            pass
+                    for i in range(len(self.branches['starter'].domino_list) - 1 , -1, -1):
+                        domino, orientation = self.branches['starter'].domino_list[i]
+                        self.branches[Constants.LEFT]\
+                            .play(domino, (orientation + 2) % 4 if orientation % 2 == 0 else orientation)
+                    self.branches[Constants.RIGHT].outside_val = spinner[0]
+                self.branches['starter'] = None
+
         elif out_num == 3:
-            pass
+            self.branches[Constants.UP] = Branch(Constants.UP, self.display, self, spinner_val=self.spinner)
+            self.branches[Constants.DOWN] = Branch(Constants.DOWN, self.display, self, spinner_val=self.spinner)
         self.state = out_num
         pass
 
-    def play(self, domino: tuple, dominoes, orient=None):
-        self.spinner = domino
+    def play(self, domino: tuple, dominoes):
         if self.state == 0:
             if domino[0] == domino[1]:
-                self.transition(2, dominoes, spinner=domino)
+                self.spinner = domino
+                self.transition(2, spinner=domino)
                 # dominoes[domino].set_rect(self.display.spinner_rect)
             else:
-                self.transition(1, dominoes)
+                self.transition(1)
                 self.branches['starter'].play(domino, 0)
-        dominoes[domino].draggable = False
+        # dominoes[domino].draggable = False
 
     def sum_outsides(self):
         if self.state == 0:
@@ -106,7 +99,7 @@ class Board(pygame.Surface):
                 self.branches['starter'].domino_list[-1][1] == 0 else \
                 self.branches['starter'].domino_list[-1][1]
             return side_a + side_b
-            pass  # TODO this is some weird math that I will need to take a second with when I'm actually writing scoring
+            pass  # TODO this is some weird math
         else:
             if self.branches[Constants.LEFT].is_empty or self.branches[Constants.RIGHT].is_empty:
                 return (2 * self.spinner[0]) + sum(branch.outside_value() for branch in self.branches)
@@ -114,4 +107,3 @@ class Board(pygame.Surface):
                 return sum(self.branches[orientation].outside_value() if self.branches[orientation] is not None else 0
                            for orientation in Constants.ORIENTATIONS)
         pass
-
