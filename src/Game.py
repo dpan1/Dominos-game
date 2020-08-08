@@ -13,11 +13,12 @@ def player_no(starting_no):
 
 class Game(object):
     def __init__(self, board, starting_player=0):
-        self.current_player = starting_player
+        self.current_player = player_no(starting_player)
         self.domino_list = list(Constants.FULL_SET)
+        self.information_sheet = list()
         self.hands = [[] for _ in range(4)]
         self.scores = [0 for _ in range(4)]
-        self.players = [Player(i, board) if i > 0 else None for i in range(4)]
+        self.players = [Player(i, board, Constants.RANDOM_PLAYABLE) if i > 0 else None for i in range(4)]
         self.state = 0
         pass
 
@@ -37,3 +38,6 @@ class Game(object):
         random.shuffle(self.domino_list)
         self.hands = [[self.domino_list[j * 4 + i] for j in range(7)] for i in range(4)]
         pass
+
+    def record_play(self, domino_tuple, player):
+        self.information_sheet.append((domino_tuple, player))

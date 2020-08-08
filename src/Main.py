@@ -36,7 +36,10 @@ def main():
     game = Game(board)
     game.deal()  # players in the game are handed dominoes are divided between
 
+    # default hand setting statement, comment for debugging
     # hand.set_hand(game.hands[0])
+
+    # debugging hand setting statements
     hand.set_hand([(1, 3), (3, 4), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
     # hand.set_hand([(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (3, 3)])  # set a test hand
     hand.set_dom_width(display.DOMINO_WIDTH)
@@ -46,7 +49,8 @@ def main():
 
     held = None
 
-    drop_surfaces = dict()
+    # drop_surfaces = dict()  # This helps immensely with debugging, but starts to get in the way because it's not
+    # transparent
 
     while run:
         for event in pygame.event.get():
@@ -224,22 +228,22 @@ def main():
             if dominoes[dom_tup].show_me:
                 screen.blit(dominoes[dom_tup], dominoes[dom_tup].get_rect())
 
-        if board.state == 1:
-            for drop_area in board.branches['starter'].drop_areas.keys():
-                drop_surfaces[drop_area] = pygame.Surface((board.branches['starter'].drop_areas[
-                                                               drop_area].width,
-                                                           board.branches['starter'].drop_areas[
-                                                               drop_area].height
-                                                           ))
-                drop_surfaces[drop_area].fill(Constants.WHITE)
-                screen.blit(drop_surfaces[drop_area], board.branches['starter'].drop_areas[drop_area])
-        else:
-            for branch in Constants.ORIENTATIONS:
-                if board.branches[branch] is not None:
-                    drop_surfaces[branch] = pygame.Surface((board.branches[branch].drop_area.width,
-                                                            board.branches[branch].drop_area.height))
-                    drop_surfaces[branch].fill(Constants.WHITE)
-                    screen.blit(drop_surfaces[branch], board.branches[branch].drop_area)
+        # if board.state == 1:
+        #     for drop_area in board.branches['starter'].drop_areas.keys():
+        #         drop_surfaces[drop_area] = pygame.Surface((board.branches['starter'].drop_areas[
+        #                                                        drop_area].width,
+        #                                                    board.branches['starter'].drop_areas[
+        #                                                        drop_area].height
+        #                                                    ))
+        #         drop_surfaces[drop_area].fill(Constants.AQUA)
+        #         screen.blit(drop_surfaces[drop_area], board.branches['starter'].drop_areas[drop_area])
+        # else:
+        #     for branch in Constants.ORIENTATIONS:
+        #         if board.branches[branch] is not None:
+        #             drop_surfaces[branch] = pygame.Surface((board.branches[branch].drop_area.width,
+        #                                                     board.branches[branch].drop_area.height))
+        #             drop_surfaces[branch].fill(Constants.AQUA)
+        #             screen.blit(drop_surfaces[branch], board.branches[branch].drop_area)
         pygame.display.flip()
 
 

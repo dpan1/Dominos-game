@@ -8,7 +8,7 @@ class Constants:
     LEFT = (-1, 0)
     DOWN = (0, 1)
     # ORIENTATIONS = [DOWN, LEFT, UP, RIGHT]  # sets an ordering
-    ORIENTATIONS = [RIGHT, UP, LEFT, DOWN]
+    ORIENTATIONS = [RIGHT, UP, LEFT, DOWN]  # This ordering worked better for rotations in pygame, I was fighting it.
     # game modes
     FFA = 0
     TEAM = 1

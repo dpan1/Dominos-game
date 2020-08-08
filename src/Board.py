@@ -28,13 +28,11 @@ class Board(pygame.Surface):
         if self.state == 0:
             pass
         elif self.state == 1:
-            # Calculate length of starter branch + 2 * padding + 2 drop areas,
-            # if it's wider than the screen, scale it down
             self.branches['starter'].arrange(dominoes)
-            l = self.branches['starter'].drop_areas[Constants.LEFT].left
-            r = self.branches['starter'].drop_areas[Constants.RIGHT].right
-            if l < 0 or r > self.display.WINDOW_WIDTH:
+            if self.branches['starter'].drop_areas[Constants.LEFT].left < 0 or \
+                    self.branches['starter'].drop_areas[Constants.RIGHT].right > self.display.WINDOW_WIDTH:
                 self.display.rescale_board(self.find_scale('starter'))
+                self.branches['starter'].arrange(dominoes)
             pass
         elif self.state == 2:
             # if it's wider than the screen scale it down.
