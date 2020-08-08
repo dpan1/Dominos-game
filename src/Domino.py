@@ -13,8 +13,8 @@ class Domino(pygame.Surface):
         self.show_me = False
         self.draggable = True
         self.original = pygame.image.load(f'../tiles/{pair[0]}{pair[1]}.png')
-        pre_scaled_image = pygame.transform.rotate(self.original, 90 * self.rotation)
-        self.image = pygame.transform.scale(pre_scaled_image, (self.width, self.height))
+        self.pre_scaled_image = pygame.transform.rotate(self.original, 90 * self.rotation)
+        self.image = pygame.transform.scale(self.pre_scaled_image, (self.width, self.height))
         self.blit(self.image, (0, 0))
         pass
 
@@ -35,16 +35,10 @@ class Domino(pygame.Surface):
             self.rotation % 2 == 0 else self.display.BOARD_SHORT_DIM
         self.height = self.display.BOARD_SHORT_DIM if self.rotation % 2 == 0 else self.display.BOARD_LONG_DIM
         super().__init__((self.width, self.height))
-        pre_scaled_image = pygame.transform.rotate(self.original, 90 * self.rotation)
-        self.image = pygame.transform.scale(pre_scaled_image, (self.width, self.height))
+        self.pre_scaled_image = pygame.transform.rotate(self.original, 90 * self.rotation)
+        self.image = pygame.transform.scale(self.pre_scaled_image, (self.width, self.height))
         self.rect = self.image.get_rect(center=center)
         self.blit(self.image, (0, 0))
-
-    # def place(self, tl_x, tl_y):
-    #     self.set_rect(pygame.Rect(tl_x, tl_y,
-    #                               self.height if self.rotation % 2 == 0 else self.width,
-    #                               self.width if self.rotation % 2 == 0 else self.height))
-    #     self.blit(self.image, (0, 0))
 
     def center(self, ctr_x, ctr_y, rotation):
         self.set_rotate(rotation)

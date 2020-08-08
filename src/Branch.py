@@ -40,7 +40,18 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
             pass
         pass
 
+    def rational_length(self):
+        my_sum = 0
+        for _, orientation in self.domino_list:
+            if orientation % 2 == 0:
+                my_sum += 20
+            else:
+                my_sum += 10
+        return 30 + (2 * (len(self.domino_list) + 1)) + my_sum  # my rationale is that padding is 2
+
     def arrange(self, dominoes):
+        for dom_tup, _ in self.domino_list:
+            dominoes[dom_tup].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
         if self.is_starter:
             x_series = list(range((self.display.WINDOW_WIDTH // 2) - (self.length() // 2)
                                   + (self.display.BOARD_LONG_DIM // 2),
@@ -101,9 +112,9 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
                              for i in range(len(additions))]
                 for i in range(len(self.domino_list) - 1):
                     dominoes[self.domino_list[i+1][0]].center(positions[i][0],
-                                                            positions[i][1],
-                                                            (Constants.ORIENTATIONS.index(self.orientation)
-                                                             + self.domino_list[i + 1][1]) % 4)
+                                                              positions[i][1],
+                                                              (Constants.ORIENTATIONS.index(self.orientation)
+                                                               + self.domino_list[i + 1][1]) % 4)
 
     def length(self):
         length = (self.display.DOMINO_PADDING * ((len(self.domino_list) - 1) if len(self.domino_list) > 0 else 0)) \
@@ -111,6 +122,3 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
                     lambda x: self.display.BOARD_LONG_DIM if x[1] % 2 == 0
                     else self.display.BOARD_SHORT_DIM, self.domino_list)))
         return length
-
-    # def outside_value(self):
-    #     return self.outside_val

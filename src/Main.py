@@ -38,6 +38,7 @@ def main():
 
     # hand.set_hand(game.hands[0])
     hand.set_hand([(1, 3), (3, 4), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
+    # hand.set_hand([(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (3, 3)])  # set a test hand
     hand.set_dom_width(display.DOMINO_WIDTH)
     hand.set_dom_height(display.DOMINO_HEIGHT)
 
@@ -95,13 +96,12 @@ def main():
                     if board.rect.collidepoint(mouse_pos):
                         hand.remove(held)
                         dominoes[held].draggable = False
-                        board.play(held, dominoes)
+                        board.play(held)
                     held = None
                     hand.arrange(dominoes)
                     board.arrange(dominoes)
 
                 elif board.state == 1:
-                    # something along the lines of for collider, if collision and playable, board plays
                     for side in [Constants.LEFT, Constants.RIGHT]:
                         if board.branches['starter'].drop_areas[side].collidepoint(mouse_pos):
                             if side == Constants.RIGHT:
@@ -231,14 +231,14 @@ def main():
                                                            board.branches['starter'].drop_areas[
                                                                drop_area].height
                                                            ))
-                drop_surfaces[drop_area].fill(Constants.AQUA)
+                drop_surfaces[drop_area].fill(Constants.WHITE)
                 screen.blit(drop_surfaces[drop_area], board.branches['starter'].drop_areas[drop_area])
         else:
             for branch in Constants.ORIENTATIONS:
                 if board.branches[branch] is not None:
                     drop_surfaces[branch] = pygame.Surface((board.branches[branch].drop_area.width,
                                                             board.branches[branch].drop_area.height))
-                    drop_surfaces[branch].fill(Constants.AQUA)
+                    drop_surfaces[branch].fill(Constants.WHITE)
                     screen.blit(drop_surfaces[branch], board.branches[branch].drop_area)
         pygame.display.flip()
 
