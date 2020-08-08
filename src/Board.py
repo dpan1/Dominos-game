@@ -34,32 +34,57 @@ class Board(pygame.Surface):
             l = self.branches['starter'].drop_areas[Constants.LEFT].left
             r = self.branches['starter'].drop_areas[Constants.RIGHT].right
             if l < 0 or r > self.display.WINDOW_WIDTH:
-                self.display.rescale_board(self.find_scale())
+                self.display.rescale_board(self.find_scale('starter'))
             pass
-        elif self.state == 2:  # TODO look into some sort of fall through cases. if self.state > 1 and so on
+        elif self.state == 2:
             # if it's wider than the screen scale it down.
             dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
-            # dominoes[self.spinner].center = self.display.BOARD_CENTER
             self.branches[Constants.LEFT].arrange(dominoes)
             self.branches[Constants.RIGHT].arrange(dominoes)
             # Calculate length of left and right branches + Board_short_dim + 2 * padding + 2 drop areas,
-            l = self.branches[Constants.LEFT].drop_area.left
-            r = self.branches[Constants.RIGHT].drop_area.right
-            if l < 0 or r > self.display.WINDOW_WIDTH:
-                self.display.rescale_board(self.find_scale())
+            if self.branches[Constants.LEFT].drop_area.left < 0:
+                self.display.rescale_board(self.find_scale(Constants.LEFT))
+                dominoes[self.spinner].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
+                dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
+                self.branches[Constants.LEFT].arrange(dominoes)
+                self.branches[Constants.RIGHT].arrange(dominoes)
+            elif self.branches[Constants.RIGHT].drop_area.right > self.display.WINDOW_WIDTH:
+                self.display.rescale_board(self.find_scale(Constants.RIGHT))
                 dominoes[self.spinner].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
                 dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
                 self.branches[Constants.LEFT].arrange(dominoes)
                 self.branches[Constants.RIGHT].arrange(dominoes)
         elif self.state == 3:
-            l = self.branches[Constants.LEFT].drop_area.left
-            r = self.branches[Constants.RIGHT].drop_area.right
-            # u = self.branches[Constants.UP].drop_area.
-            if l < 0 or r > self.display.WINDOW_WIDTH:
-                self.find_scale()
-            # same as above, but with up and down.
-            dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
             # dominoes[self.spinner].center = self.display.BOARD_CENTER
+            for orientation in Constants.ORIENTATIONS:
+                self.branches[orientation].arrange(dominoes)
+            boundaries = {
+                orientation: {
+                    Constants.LEFT: self.branches[Constants.LEFT].drop_area.left,
+                    Constants.UP: self.branches[Constants.UP].drop_area.top,
+                    Constants.RIGHT: self.branches[Constants.RIGHT].drop_area.right,
+                    Constants.DOWN: self.branches[Constants.DOWN].drop_area.bottom
+                }[orientation] for orientation in Constants.ORIENTATIONS
+            }
+            overages = {
+                orientation: {
+                    Constants.LEFT: 0 - boundaries[orientation],
+                    Constants.UP: 0 - boundaries[orientation],
+                    Constants.RIGHT: boundaries[orientation] - self.display.WINDOW_WIDTH,
+                    Constants.DOWN: boundaries[orientation] - self.display.BOARD_HEIGHT
+                }[orientation] for orientation in Constants.ORIENTATIONS}
+            direction = None
+            for orientation in Constants.ORIENTATIONS:
+                if overages[orientation] > 0:
+                    direction = orientation
+                    break
+            if direction is not None:
+                self.display.rescale_board(self.find_scale(direction))
+            for orientation in Constants.ORIENTATIONS:
+                for dom_tup, _ in self.branches[orientation].domino_list:
+                    dominoes[dom_tup].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
+            dominoes[self.spinner].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
+            dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
             for orientation in Constants.ORIENTATIONS:
                 self.branches[orientation].arrange(dominoes)
             pass
@@ -113,38 +138,12 @@ class Board(pygame.Surface):
                 self.branches['starter'].play(domino, 0)
         # dominoes[domino].draggable = False
 
-    def find_scale(self, u=None, d=None):
-        # determine what the scale of the branch is.
-
-        if len(self.branches[Constants.RIGHT].domino_list) > len(self.branches[Constants.LEFT].domino_list):  # right is bigger
-            if u is None:
-                scale_num = float(self.display.WINDOW_WIDTH) / (2 * (5 + self.branches[Constants.RIGHT].rational_length()))
-                pass
-            else:
-                pass
-        else:
-            if u is None:
-                scale_num = float(self.display.WINDOW_WIDTH) / (2 * (5 + self.branches[Constants.LEFT].rational_length()))
-            else:
-                pass
+    def find_scale(self, longest):
+        scale_num = float(self.display.WINDOW_WIDTH if longest == Constants.LEFT or longest == Constants.RIGHT else
+                          self.display.BOARD_HEIGHT) / \
+                            (2 * ((5 if longest == Constants.LEFT or longest == Constants.RIGHT else 10)
+                                  + self.branches[longest].rational_length()))
         return scale_num
-        # self.display.rescale_board(scale_num)
-        # if self.state == 0:
-        #     pass
-        # elif self.state == 1:
-        #     for dom_tup, _ in self.branches['starter'].domino_list:
-        #         dominoes[dom_tup].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
-        # elif self.state == 2:
-        #     dominoes[self.spinner].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
-        #     for orientation in [Constants.LEFT, Constants.RIGHT]:
-        #         for dom_tup, _ in self.branches[orientation].domino_list:
-        #             dominoes[dom_tup].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
-        # elif self.state == 3:
-        #     dominoes[self.spinner].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
-        #     for orientation in Constants.ORIENTATIONS:
-        #         for dom_tup, _ in self.branches[orientation].domino_list:
-        #             dominoes[dom_tup].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
-        #     pass
 
     def sum_outsides(self):
         if self.state == 0:
@@ -157,11 +156,10 @@ class Board(pygame.Surface):
                 self.branches['starter'].domino_list[-1][1] == 0 else \
                 self.branches['starter'].domino_list[-1][1]
             return side_a + side_b
-            pass  # TODO this is some weird math
         else:
             if self.branches[Constants.LEFT].is_empty or self.branches[Constants.RIGHT].is_empty:
                 return (2 * self.spinner[0]) + sum(branch.outside_value() for branch in self.branches)
             else:
-                return sum(self.branches[orientation].outside_value() if self.branches[orientation] is not None else 0
+                return sum((self.branches[orientation].outside_val if not self.branches[orientation].is_empty else 0) if self.branches[orientation] is not None else 0
                            for orientation in Constants.ORIENTATIONS)
         pass
