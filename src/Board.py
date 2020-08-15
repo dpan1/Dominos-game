@@ -14,7 +14,6 @@ class Board(pygame.Surface):
         self.state = 0
         self.starter_branch = None
         self.played_dominoes = {}
-        # self.colliders = {orientation: None for orientation in Constants.ORIENTATIONS}
         self.branches = {orientation: None for orientation in Constants.ORIENTATIONS}
         self.spinner = None
 
@@ -23,6 +22,9 @@ class Board(pygame.Surface):
 
     def reset(self):
         self.played_dominoes = {}
+
+    def dump_state(self):
+        pass
 
     def arrange(self, dominoes):
         if self.state == 0:
@@ -37,23 +39,21 @@ class Board(pygame.Surface):
         elif self.state == 2:
             # if it's wider than the screen scale it down.
             dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
-            self.branches[Constants.LEFT].arrange(dominoes)
-            self.branches[Constants.RIGHT].arrange(dominoes)
+            self.branches[Constants.LEFT].arrange(dominoes)  # these initial ones are to make the drop rectangles
+            self.branches[Constants.RIGHT].arrange(dominoes)  # for these next checks to work at all.
             # Calculate length of left and right branches + Board_short_dim + 2 * padding + 2 drop areas,
-            if self.branches[Constants.LEFT].drop_area.left < 0:
-                self.display.rescale_board(self.find_scale(Constants.LEFT))
-                dominoes[self.spinner].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
-                dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
-                self.branches[Constants.LEFT].arrange(dominoes)
-                self.branches[Constants.RIGHT].arrange(dominoes)
-            elif self.branches[Constants.RIGHT].drop_area.right > self.display.WINDOW_WIDTH:
-                self.display.rescale_board(self.find_scale(Constants.RIGHT))
+            if self.branches[Constants.LEFT].drop_area.left < 0 or \
+                    self.branches[Constants.RIGHT].drop_area.right > self.display.WINDOW_WIDTH:
+                self.display.rescale_board(
+                    self.find_scale(
+                        Constants.LEFT if self.branches[Constants.LEFT].drop_area.left < 0 else Constants.RIGHT
+                    )
+                )
                 dominoes[self.spinner].resize(self.display.BOARD_SHORT_DIM, self.display.BOARD_LONG_DIM)
                 dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
                 self.branches[Constants.LEFT].arrange(dominoes)
                 self.branches[Constants.RIGHT].arrange(dominoes)
         elif self.state == 3:
-            # dominoes[self.spinner].center = self.display.BOARD_CENTER
             for orientation in Constants.ORIENTATIONS:
                 self.branches[orientation].arrange(dominoes)
             boundaries = {
@@ -85,7 +85,6 @@ class Board(pygame.Surface):
             dominoes[self.spinner].center(self.display.BOARD_CENTER[0], self.display.BOARD_CENTER[1], 3)
             for orientation in Constants.ORIENTATIONS:
                 self.branches[orientation].arrange(dominoes)
-            pass
 
     def transition(self, out_num, ztwo_branch=None, spinner=None):
         if out_num == 0:
@@ -110,20 +109,17 @@ class Board(pygame.Surface):
                         domino, orientation = self.branches['starter'].domino_list[i]
                         self.branches[Constants.RIGHT].\
                             play(domino, orientation)
-                    self.branches[Constants.LEFT].outside_val = spinner[0]
                 elif ztwo_branch == Constants.RIGHT:
-                    for i in range(len(self.branches['starter'].domino_list) - 1 , -1, -1):
+                    for i in range(len(self.branches['starter'].domino_list) - 1, -1, -1):
                         domino, orientation = self.branches['starter'].domino_list[i]
                         self.branches[Constants.LEFT]\
                             .play(domino, (orientation + 2) % 4 if orientation % 2 == 0 else orientation)
-                    self.branches[Constants.RIGHT].outside_val = spinner[0]
                 self.branches['starter'] = None
 
         elif out_num == 3:
             self.branches[Constants.UP] = Branch(Constants.UP, self.display, self, spinner_val=self.spinner)
             self.branches[Constants.DOWN] = Branch(Constants.DOWN, self.display, self, spinner_val=self.spinner)
         self.state = out_num
-        pass
 
     def play(self, domino: tuple):
         if self.state == 0:
@@ -156,8 +152,7 @@ class Board(pygame.Surface):
             return side_a + side_b
         else:
             if self.branches[Constants.LEFT].is_empty or self.branches[Constants.RIGHT].is_empty:
-                return (2 * self.spinner[0]) + sum(branch.outside_value() for branch in self.branches)
+                return (2 * self.spinner[0]) + sum(branch.get_end() for branch in self.branches)
             else:
-                return sum((self.branches[orientation].outside_val if not self.branches[orientation].is_empty else 0) if self.branches[orientation] is not None else 0
-                           for orientation in Constants.ORIENTATIONS)
-        pass
+                return sum((self.branches[orientation].get_score_value() if not self.branches[orientation].is_empty else 0)
+                           if self.branches[orientation] is not None else 0 for orientation in Constants.ORIENTATIONS)

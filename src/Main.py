@@ -27,30 +27,30 @@ def main():
     board_rect = pygame.Rect(0, 0, display.WINDOW_WIDTH, display.BOARD_HEIGHT)
     board = Board(board_rect, display)
     # Domino objects are pygame Surfaces, and contain information about rotation
-    dominoes = {(j, i): Domino((j, i), 3, display.DOMINO_WIDTH, display.DOMINO_HEIGHT, display)
-                for i in range(7) for j in range(i+1)}
+    domino_surface_dict = {(j, i): Domino((j, i), 3, display.DOMINO_WIDTH, display.DOMINO_HEIGHT, display)
+                           for i in range(7) for j in range(i+1)}
 
     hand_rect = pygame.Rect(0, display.BOARD_HEIGHT + 1, display.WINDOW_WIDTH, display.HAND_HEIGHT)
     hand = Hand(hand_rect, display)
 
     game = Game(board)
     game.deal()  # players in the game are handed dominoes are divided between
-
     # default hand setting statement, comment for debugging
-    # hand.set_hand(game.hands[0])
-
+    hand.set_hand(game.hands[0])
+    game.treestrap(hand)
+    for i in range(3):
+        game.players[i + 1].set_hand(game.hands[i + 1])
     # debugging hand setting statements
-    hand.set_hand([(1, 3), (3, 4), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
+    # hand.set_hand([(4, 6), (5, 5), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
+    # hand.set_hand([(1, 3), (3, 4), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
     # hand.set_hand([(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (3, 3)])  # set a test hand
     hand.set_dom_width(display.DOMINO_WIDTH)
     hand.set_dom_height(display.DOMINO_HEIGHT)
 
-    hand.arrange(dominoes)
+    hand.arrange(domino_surface_dict)
 
     held = None
-
-    # drop_surfaces = dict()  # This helps immensely with debugging, but starts to get in the way because it's not
-    # transparent
+    play_made = False
 
     while run:
         for event in pygame.event.get():
@@ -66,13 +66,13 @@ def main():
                     if hand.rect.collidepoint(mouse_pos):
                         print(f'hand clicked {next(hand_click_count)} time(s) '
                               f'at pos: ({mouse_pos[0]}, {mouse_pos[1]})')
-                    for dom_tup in dominoes.keys():
-                        if dominoes[dom_tup].show_me:
-                            if dominoes[dom_tup].draggable:
-                                if dominoes[dom_tup].get_rect().collidepoint(mouse_pos):
+                    for dom_tup in domino_surface_dict.keys():
+                        if domino_surface_dict[dom_tup].show_me:
+                            if domino_surface_dict[dom_tup].draggable:
+                                if domino_surface_dict[dom_tup].get_rect().collidepoint(mouse_pos):
                                     print(
                                         f'dom clicked at pos: ({mouse_pos[0]}, {mouse_pos[1]})')
-                                    held = dominoes[dom_tup].pair
+                                    held = domino_surface_dict[dom_tup].pair
                     if board.state == 1:
                         for drop in board.branches['starter'].drop_areas.keys():
                             if board.branches['starter'].drop_areas[drop].collidepoint(mouse_pos):
@@ -87,11 +87,11 @@ def main():
                                 print(f"drop area {direction} clicked")
 
             elif event.type == pygame.MOUSEMOTION and held is not None:
-                dominoes[held].set_rect(pygame.Rect(event.pos[0] - (display.DOMINO_WIDTH // 2),
-                                                    event.pos[1] - (display.DOMINO_HEIGHT // 2),
-                                                    display.DOMINO_WIDTH,
-                                                    display.DOMINO_HEIGHT)
-                                        )
+                domino_surface_dict[held].set_rect(pygame.Rect(event.pos[0] - (display.DOMINO_WIDTH // 2),
+                                                               event.pos[1] - (display.DOMINO_HEIGHT // 2),
+                                                               display.DOMINO_WIDTH,
+                                                               display.DOMINO_HEIGHT)
+                                                   )
 
             elif event.type == pygame.MOUSEBUTTONUP and held is not None:
                 mouse_pos = pygame.mouse.get_pos()
@@ -99,93 +99,33 @@ def main():
                 if board.state == 0:
                     if board.rect.collidepoint(mouse_pos):
                         hand.remove(held)
-                        dominoes[held].draggable = False
+                        domino_surface_dict[held].draggable = False
                         board.play(held)
+                        play_made = True
                     held = None
-                    hand.arrange(dominoes)
-                    board.arrange(dominoes)
 
                 elif board.state == 1:
-                    for side in [Constants.LEFT, Constants.RIGHT]:
-                        if board.branches['starter'].drop_areas[side].collidepoint(mouse_pos):
-                            if side == Constants.RIGHT:
-                                if board.branches['starter'].domino_list[-1][1] == 0:
-                                    if board.branches['starter'].domino_list[-1][0][1] == held[0]:
-                                        if held[0] == held[1]:
-                                            board.transition(2, ztwo_branch=side, spinner=held)
-                                            dominoes[held].draggable = False
-                                            hand.remove(held)
-                                            break  # otherwise, the second part of the loop won't work.
-                                        else:
-                                            board.branches['starter'].play(held, 0)
-                                            dominoes[held].draggable = False
-                                            hand.remove(held)
-                                            break
-                                    elif board.branches['starter'].domino_list[-1][0][1] == held[1]:
-                                        board.branches['starter'].play(held, 2)
-                                        dominoes[held].draggable = False
-                                        hand.remove(held)
-                                        break
-                                elif board.branches['starter'].domino_list[-1][1] == 2:  # board.branches['starter'].domino_list[-1][1] == 1: is implied
-                                    if board.branches['starter'].domino_list[-1][0][0] == held[0]:
-                                        if held[0] == held[1]:
-                                            board.transition(2, ztwo_branch=side, spinner=held)
-                                            dominoes[held].draggable = False
-                                            hand.remove(held)
-                                            break
-                                        else:
-                                            board.branches['starter'].play(held, 0)
-                                            dominoes[held].draggable = False
-                                            hand.remove(held)
-                                            break
-                                    elif board.branches['starter'].domino_list[-1][0][0] == held[1]:
-                                        board.branches['starter'].play(held, 2)
-                                        dominoes[held].draggable = False
-                                        hand.remove(held)
-                                        break
-                            else:  # side == Constants.LEFT
-                                if board.branches['starter'].domino_list[0][1] == 0:
-                                    if board.branches['starter'].domino_list[0][0][0] == held[0]:
-                                        if held[0] == held[1]:
-                                            board.transition(2, ztwo_branch=side, spinner=held)
-                                            dominoes[held].draggable = False
-                                        else:
-                                            board.branches['starter'].play_left(held, 2)
-                                            dominoes[held].draggable = False
-                                        hand.remove(held)
-                                        break
-                                    elif board.branches['starter'].domino_list[0][0][0] == held[1]:
-                                        board.branches['starter'].play_left(held, 0)
-                                        dominoes[held].draggable = False
-                                        hand.remove(held)
-                                        break
-                                else:  # board.branches['starter'].domino_list[-1][1] == 1: is implied
-                                    if board.branches['starter'].domino_list[0][0][0] == held[0]:
-                                        if held[0] == held[1]:
-                                            board.transition(2, ztwo_branch=side, spinner=held)
-                                            dominoes[held].draggable = False
-                                            hand.remove(held)
-                                            break
-                                        else:
-                                            board.branches['starter'].play_left(held, 2)
-                                            dominoes[held].draggable = False
-                                            hand.remove(held)
-                                            break
+                    if board.branches['starter'].drop_areas[Constants.LEFT].collidepoint(mouse_pos):
+                        if board.branches['starter'].is_valid_play(held, Constants.LEFT):
+                            board.branches['starter'].play_plain(held, direction=Constants.LEFT)
+                            domino_surface_dict[held].draggable = False
+                            hand.remove(held)
+                    elif board.branches['starter'].drop_areas[Constants.RIGHT].collidepoint(mouse_pos):
+                        if board.branches['starter'].is_valid_play(held, Constants.RIGHT):
+                            board.branches['starter'].play_plain(held, direction=Constants.RIGHT)
+                            domino_surface_dict[held].draggable = False
+                            hand.remove(held)
+                            play_made = True
                     held = None
 
                 elif board.state == 2:
                     for branch in [Constants.LEFT, Constants.RIGHT]:
                         if board.branches[branch].drop_area.collidepoint(mouse_pos):
-                            if board.branches[branch].outside_val == held[0]:
-                                if held[0] == held[1]:
-                                    board.branches[branch].play(held, 1)
-                                else:
-                                    board.branches[branch].play(held, 0)
-                                dominoes[held].draggable = False
-                                hand.remove(held)
-                            elif board.branches[branch].outside_val == held[1]:
-                                board.branches[branch].play(held, 2)
-                                dominoes[held].draggable = False
+                            if board.branches[branch].get_value_end() == held[0] or \
+                                    board.branches[branch].get_value_end() == held[1]:
+                                board.branches[branch].play_plain(held)
+                                play_made = True
+                                domino_surface_dict[held].draggable = False
                                 hand.remove(held)
 
                     if (len(board.branches[Constants.LEFT].domino_list) != 0 and
@@ -198,17 +138,11 @@ def main():
                 elif board.state == 3:
                     for branch in Constants.ORIENTATIONS:
                         if board.branches[branch].drop_area.collidepoint(mouse_pos):
-                            if board.branches[branch].outside_val == held[0]:
-                                if held[0] == held[1]:
-                                    board.branches[branch].play(held, 1)
-                                else:
-                                    board.branches[branch].play(held, 0)
-                                    dominoes[held].draggable = False
-                                    hand.remove(held)
-                                    break
-                            elif board.branches[branch].outside_val == held[1]:
-                                board.branches[branch].play(held, 2)
-                                dominoes[held].draggable = False
+                            if board.branches[branch].outside_val == held[0] or \
+                                    board.branches[branch].outside_val == held[1]:
+                                board.branches[branch].play_plain(held)
+                                play_made = True
+                                domino_surface_dict[held].draggable = False
                                 hand.remove(held)
                                 break
                     if held is not None:
@@ -216,34 +150,27 @@ def main():
 
                 else:  # the above statements should exhaust the list of board states.
                     held = None
+                # These lines are contained in the mouse up
+                board.arrange(domino_surface_dict)
+                hand.arrange(domino_surface_dict)  # arrange the hand for a removed domino
 
-                board.arrange(dominoes)
-                hand.arrange(dominoes)
+        if play_made:
+            tally = board.sum_outsides() % 5
+            if tally == 0 and tally >= 10:
+                game.scores[0] += board.sum_outsides()
+            if len(hand.hand) == 0:
+                print('domino!')
+            # game.automate(dominoes)
+            play_made = False
+            board.arrange(domino_surface_dict)
 
         screen.blit(board, board_rect)
-
         screen.blit(hand, hand_rect)
+        # gotta show the dominos.
+        for dom_tup in domino_surface_dict.keys():
+            if domino_surface_dict[dom_tup].show_me:
+                screen.blit(domino_surface_dict[dom_tup], domino_surface_dict[dom_tup].get_rect())
 
-        for dom_tup in dominoes.keys():
-            if dominoes[dom_tup].show_me:
-                screen.blit(dominoes[dom_tup], dominoes[dom_tup].get_rect())
-
-        # if board.state == 1:
-        #     for drop_area in board.branches['starter'].drop_areas.keys():
-        #         drop_surfaces[drop_area] = pygame.Surface((board.branches['starter'].drop_areas[
-        #                                                        drop_area].width,
-        #                                                    board.branches['starter'].drop_areas[
-        #                                                        drop_area].height
-        #                                                    ))
-        #         drop_surfaces[drop_area].fill(Constants.AQUA)
-        #         screen.blit(drop_surfaces[drop_area], board.branches['starter'].drop_areas[drop_area])
-        # else:
-        #     for branch in Constants.ORIENTATIONS:
-        #         if board.branches[branch] is not None:
-        #             drop_surfaces[branch] = pygame.Surface((board.branches[branch].drop_area.width,
-        #                                                     board.branches[branch].drop_area.height))
-        #             drop_surfaces[branch].fill(Constants.AQUA)
-        #             screen.blit(drop_surfaces[branch], board.branches[branch].drop_area)
         pygame.display.flip()
 
 

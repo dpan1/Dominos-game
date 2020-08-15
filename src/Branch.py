@@ -18,36 +18,11 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
         self.outside_val = None
         self.is_starter = False
         self.center_dim = self.display.BOARD_HEIGHT // 2, self.display.WINDOW_WIDTH // 2
+        # self.spinner_val = spinner_val
         if spinner_val is None:
             self.is_starter = True
         else:
             self.outside_val = spinner_val[0]
-
-    def play(self, domino, orientation):
-        self.domino_list.append((domino, orientation))
-        if orientation == 0:
-            self.outside_val = domino[1]
-        elif orientation == 2:
-            self.outside_val = domino[0]
-        else:  # orientation == 1  # is a double
-            self.outside_val = domino[0]  # because they're both the same
-
-    def play_left(self, domino, orientation):
-        self.domino_list.appendleft((domino, orientation))
-
-    def rescale(self, scale_num, scale_den, dominoes):
-        for domino in self.parent.domino_list:
-            pass
-        pass
-
-    def rational_length(self):
-        my_sum = 0
-        for _, orientation in self.domino_list:
-            if orientation % 2 == 0:
-                my_sum += 20
-            else:
-                my_sum += 10
-        return 30 + (2 * (len(self.domino_list) + 1)) + my_sum  # my rationale is that padding is 2
 
     def arrange(self, dominoes):
         for dom_tup, _ in self.domino_list:
@@ -116,9 +91,132 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
                                                               (Constants.ORIENTATIONS.index(self.orientation)
                                                                + self.domino_list[i + 1][1]) % 4)
 
+    def get_end_value(self):
+        if len(self.domino_list) > 0:
+            domino, orientation = self.domino_list[-1][1]
+            if orientation == 0:
+                return domino[1]
+            else:
+                return domino[0]
+        else:
+            return 0
+
+    def get_left_end_value(self):
+        if len(self.domino_list) > 0:
+            domino, orientation = self.domino_list[-1][1]
+            if orientation == 0:
+                return domino[0]
+            else:
+                return domino[1]
+        else:
+            return 0
+
+    def get_score_value(self):
+        if len(self.domino_list) > 0:
+            domino, orientation = self.domino_list[-1][1]
+            if orientation == 0:
+                return domino[1]
+            elif orientation == 1:
+                return sum(domino)
+            elif orientation == 2:
+                return domino[0]
+        else:
+            return 0
+
     def length(self):
         length = (self.display.DOMINO_PADDING * ((len(self.domino_list) - 1) if len(self.domino_list) > 0 else 0)) \
                  + sum(list(map(
                     lambda x: self.display.BOARD_LONG_DIM if x[1] % 2 == 0
                     else self.display.BOARD_SHORT_DIM, self.domino_list)))
         return length
+
+    def is_valid_play(self, domino, direction=None):
+        if self.parent.state == 1:
+            if direction == Constants.LEFT:
+                if self.domino_list[0][1] == 0:
+                    if self.domino_list[0][0][0] == domino[0]:
+                        return True
+                    elif self.domino_list[0][0][0] == domino[1]:
+                        return True
+                elif self.domino_list[0][1] == 2:
+                    if self.domino_list[0][0][1] == domino[0]:
+                        return True
+                    elif self.domino_list[0][0][1] == domino[1]:
+                        return True
+            elif direction == Constants.RIGHT:
+                if self.domino_list[-1][1] == 0:
+                    if self.domino_list[-1][0][0] == domino[0]:
+                        return True
+                    elif self.domino_list[-1][0][0] == domino[1]:
+                        return True
+                elif self.domino_list[-1][1] == 2:
+                    if self.domino_list[-1][0][1] == domino[0]:
+                        return True
+                    elif self.domino_list[-1][0][1] == domino[1]:
+                        return True
+            return False
+        else:
+            if self.get_end_value() == domino[0] or self.get_end_value() == domino[1]:
+                return True
+            else:
+                return False
+
+    def play_plain(self, domino, direction=None):
+        if self.parent.state == 1:
+            if direction == Constants.LEFT:
+                if self.domino_list[0][1] == 0:
+                    if self.domino_list[0][0][0] == domino[0]:
+                        if domino[0] == domino[1]:
+                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                        else:
+                            self.play_left(domino, 2)
+                    elif self.domino_list[0][0][0] == domino[1]:
+                        self.play_left(domino, 0)
+                elif self.domino_list[0][1] == 2:
+                    if self.domino_list[0][0][1] == domino[0]:
+                        if domino[0] == domino[1]:
+                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                        else:
+                            self.play_left(domino, 2)
+                    elif self.domino_list[0][0][1] == domino[1]:
+                        self.play_left(domino, 0)
+            elif direction == Constants.RIGHT:
+                if self.domino_list[-1][1] == 0:
+                    if self.domino_list[-1][0][1] == domino[0]:
+                        if domino[0] == domino[1]:
+                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                        else:
+                            self.play(domino, 2)
+                    elif self.domino_list[0][0][0] == domino[1]:
+                        self.play(domino, 0)
+                elif self.domino_list[0][1] == 2:
+                    if self.domino_list[-1][0][1] == domino[0]:
+                        if domino[0] == domino[1]:
+                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                        else:
+                            self.play_left(domino, 2)
+                    elif self.domino_list[0][0][1] == domino[1]:
+                        self.play_left(domino, 0)
+        else:
+            if domino[0] == domino[1]:
+                self.domino_list.append((domino, 1))
+            else:
+                if self.get_end_value() == domino[0]:
+                    self.domino_list.append((domino, 0))
+                elif self.get_end_value() == domino[1]:
+                    self.domino_list.append((domino, 2))
+
+    def play(self, domino, orientation):
+        self.domino_list.append((domino, orientation))
+
+    def play_left(self, domino, orientation):
+        self.domino_list.appendleft((domino, orientation))
+
+    def rational_length(self):
+        my_sum = 0
+        for _, orientation in self.domino_list:
+            if orientation % 2 == 0:
+                my_sum += 20
+            else:
+                my_sum += 10
+        return 30 + (2 * (len(self.domino_list) + 1)) + my_sum  # my rationale is that padding is 2
