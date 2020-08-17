@@ -35,15 +35,19 @@ def main():
 
     game = Game(board)
     game.deal()  # players in the game are handed dominoes are divided between
+
     # default hand setting statement, comment for debugging
     hand.set_hand(game.hands[0])
-    game.treestrap(hand)
-    for i in range(3):
-        game.players[i + 1].set_hand(game.hands[i + 1])
+    # set hand before making tree
     # debugging hand setting statements
-    # hand.set_hand([(4, 6), (5, 5), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
+    # hand.set_hand([(6, 6), (5, 5), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
     # hand.set_hand([(1, 3), (3, 4), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
     # hand.set_hand([(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (3, 3)])  # set a test hand
+
+    for i in range(3):
+        game.players[i + 1].set_hand(game.hands[i + 1])
+
+    # game.treestrap(hand)
     hand.set_dom_width(display.DOMINO_WIDTH)
     hand.set_dom_height(display.DOMINO_HEIGHT)
 
@@ -160,7 +164,7 @@ def main():
                 game.scores[0] += board.sum_outsides()
             if len(hand.hand) == 0:
                 print('domino!')
-            # game.automate(dominoes)
+            game.automate(domino_surface_dict)
             play_made = False
             board.arrange(domino_surface_dict)
 

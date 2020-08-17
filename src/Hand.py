@@ -32,7 +32,7 @@ class Hand(pygame.Surface):
     def playable(self, board):
         if board.state == 0:
             return [(hand_item, 0, (hand_item[0] + hand_item[1])
-                     if (hand_item[0] + hand_item[1]) % 5 and (hand_item[0] + hand_item[1]) > 5 else 0)
+                     if ((hand_item[0] + hand_item[1]) % 5 == 0) and (hand_item[0] + hand_item[1]) > 5 else 0)
                     for hand_item in self.hand]
         elif board.state == 1:
             playable = []
@@ -42,18 +42,9 @@ class Hand(pygame.Surface):
                     playable.append((dom_tup, Constants.RIGHT,
                                      board.sum_outsides() if board.sum_outsides() % 5 == 0 else 0))
             return playable
-        elif board.state == 2:
+        else:
             playable = []
-            for direction in [Constants.LEFT, Constants.RIGHT]:
-                for dom_tup in self.hand:
-                    if board.branches[direction].outside_val == dom_tup[0] or \
-                            board.branches[direction].outside_val == dom_tup[1]:
-                        playable.append((dom_tup, direction,
-                                         board.sum_outsides() if board.sum_outsides() % 5 == 0 else 0))
-            return playable
-        elif board.state == 3:
-            playable = []
-            for direction in Constants.ORIENTATIONS:
+            for direction in ([Constants.LEFT, Constants.RIGHT] if board.state == 2 else Constants.ORIENTATIONS):
                 for dom_tup in self.hand:
                     if board.branches[direction].outside_val == dom_tup[0] or \
                             board.branches[direction].outside_val == dom_tup[1]:

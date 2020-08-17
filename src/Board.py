@@ -1,6 +1,7 @@
 import pygame
 from Constants import Constants
 from Branch import Branch
+
 # TODO rewrite this coherently as a State Machine. For better code organization if anything (keeps different state
 # TODO handling code together, by state, rather than by function)
 
@@ -23,8 +24,7 @@ class Board(pygame.Surface):
     def reset(self):
         self.played_dominoes = {}
 
-    def dump_state(self):
-        pass
+
 
     def arrange(self, dominoes):
         if self.state == 0:
