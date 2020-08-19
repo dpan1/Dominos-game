@@ -167,7 +167,7 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
                 if self.domino_list[0][1] == 0:
                     if self.domino_list[0][0][0] == domino[0]:
                         if domino[0] == domino[1]:
-                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                            self.parent.spinner_transfer(2, ztwo_branch=direction, spinner=domino)
                         else:
                             self.play_left(domino, 2)
                     elif self.domino_list[0][0][0] == domino[1]:
@@ -175,7 +175,7 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
                 elif self.domino_list[0][1] == 2:
                     if self.domino_list[0][0][1] == domino[0]:
                         if domino[0] == domino[1]:
-                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                            self.parent.spinner_transfer(2, ztwo_branch=direction, spinner=domino)
                         else:
                             self.play_left(domino, 2)
                     elif self.domino_list[0][0][1] == domino[1]:
@@ -184,7 +184,7 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
                 if self.domino_list[-1][1] == 0:
                     if self.domino_list[-1][0][1] == domino[0]:
                         if domino[0] == domino[1]:
-                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                            self.parent.spinner_transfer(2, ztwo_branch=direction, spinner=domino)
                         else:
                             self.play(domino, 2)
                     elif self.domino_list[0][0][0] == domino[1]:
@@ -192,7 +192,7 @@ class Branch(object):  # not a Surface itself, but more of a Surface Traffic Con
                 elif self.domino_list[0][1] == 2:
                     if self.domino_list[-1][0][1] == domino[0]:
                         if domino[0] == domino[1]:
-                            self.parent.transition(2, ztwo_branch=direction, spinner=domino)
+                            self.parent.spinner_transfer(2, ztwo_branch=direction, spinner=domino)
                         else:
                             self.play_left(domino, 2)
                     elif self.domino_list[0][0][1] == domino[1]:

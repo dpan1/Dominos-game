@@ -24,8 +24,6 @@ class Board(pygame.Surface):
     def reset(self):
         self.played_dominoes = {}
 
-
-
     def arrange(self, dominoes):
         if self.state == 0:
             pass
@@ -126,11 +124,9 @@ class Board(pygame.Surface):
             if domino[0] == domino[1]:
                 self.spinner = domino
                 self.transition(2, spinner=domino)
-                # dominoes[domino].set_rect(self.display.spinner_rect)
             else:
                 self.transition(1)
                 self.branches['starter'].play(domino, 0)
-        # dominoes[domino].draggable = False
 
     def find_scale(self, longest):
         scale_num = float(self.display.WINDOW_WIDTH if longest == Constants.LEFT or longest == Constants.RIGHT else

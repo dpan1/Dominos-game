@@ -55,12 +55,12 @@ class Game(object):
 
     def automate(self, dominoes):
         self.current_player = next(self.player)
-        while self.current_player != 0:
-            self.root = self.dump()
-
-            for play in self.players[self.current_player].playable():
-                self.root.children[play[0]] = GameState()
-
+        self.root = self.dump()
+        node = self.root
+        for dom_tup, direction in self.players[self.current_player].playable():
+            node.children[(dom_tup, direction)] = GameState(state=copy.copy(node.ats),
+                                                            dom_tup=dom_tup,
+                                                            direction=direction)
         # take player action
 
     def deal(self):
@@ -74,12 +74,18 @@ class Game(object):
         ats = {
             'STATE': self.board.state,
             'SPINNER': self.board.spinner,
-            'STARTER': copy.deepcopy(self.board.branches['starter'].domino_list),
-            'UP': copy.deepcopy(self.board.branches[Constants.UP].domino_list),
-            'RIGHT': copy.deepcopy(self.board.branches[Constants.RIGHT].domino_list),
-            'LEFT': copy.deepcopy(self.board.branches[Constants.LEFT].domino_list),
-            'DOWN': copy.deepcopy(self.board.branches[Constants.DOWN].domino_list),
+            'STARTER': self._dump_branch('starter'),
+            'UP': self._dump_branch(Constants.UP),
+            'RIGHT': self._dump_branch(Constants.RIGHT),
+            'LEFT': self._dump_branch(Constants.LEFT),
+            'DOWN': self._dump_branch(Constants.DOWN),
             'HANDS': copy.deepcopy(self.hands),
             'TURN': self.current_player
         }
         return GameState(state=ats)
+
+    def _dump_branch(self, branch_name):
+        if self.board.branches[branch_name] is not None:
+            return copy.deepcopy(self.board.branches['starter'].domino_list)
+        else:
+            return []

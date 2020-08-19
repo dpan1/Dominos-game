@@ -57,15 +57,28 @@ class Player(object):
         else:
             return None
 
+    def right_check(self, dom_tup):
+        return self.board.branches['starter'].domino_list[-1][0][
+                   1 if self.board.branches['starter'].domino_list[-1][0] == 0 else 0] == dom_tup[0] or \
+               self.board.branches['starter'].domino_list[-1][0][
+                   1 if self.board.branches['starter'].domino_list[-1][0] == 0 else 0] == dom_tup[1]
+
+    def left_check(self, dom_tup):
+        return self.board.branches['starter'].domino_list[0][0][
+                   0 if self.board.branches['starter'].domino_list[0][1] == 1 else 1] == dom_tup[0] or \
+               self.board.branches['starter'].domino_list[0][0][
+                   0 if self.board.branches['starter'].domino_list[0][1] == 0 else 1] == dom_tup[1]
+
     def playable(self):  # TODO needs to calculate rewards for potential plays
         if self.board.state == 0:
             return [(hand_item, 0) for hand_item in self.hand]
         elif self.board.state == 1:
             playable = []
             for dom_tup in self.hand:
-                if self.board.branches['starter'].domino_list[-1][0][1] == dom_tup[0] or \
-                        self.board.branches['starter'].domino_list[-1][0][1]:
+                if self.right_check(dom_tup):
                     playable.append((dom_tup, Constants.RIGHT))
+                if self.left_check(dom_tup):
+                    playable.append((dom_tup, Constants.LEFT))
             return playable
         elif self.board.state == 2:
             playable = []
