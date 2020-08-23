@@ -1,149 +1,156 @@
 from Constants import Constants
-from collections import deque
-import copy
 
 
 class GameState(object):
-    ats = {
-        'STATE': 0,
-        'SPINNER': None,
-        'STARTER': None,
-        Constants.UP: [],
-        Constants.RIGHT: [],
-        Constants.LEFT: [],
-        Constants.DOWN: [],
-        'HANDS': [],
-        'TURN': 0
-    }
-    children = dict()
-
-    def __init__(self, state=None, turn=None, dom_tup=None, direction=None):
+    def __init__(self, state=None, turn=None, dom_tup=None, direction=None, scores=None, score=None):
+        self.children = dict()
         if state is not None:
             self.ats = state
         if turn is not None:
             self.ats['TURN'] = turn
+            if score is not None:
+                self.ats['SCORES'][turn] = self.outsides() + score
         if dom_tup is not None:
-
+            self.ats['TURN'] = ((self.ats['TURN'] + 1) % 4)
+            self.ats['HANDS'][self.ats['TURN']].remove(dom_tup)
             if self.ats['STATE'] == 0:
                 if dom_tup[0] == dom_tup[1]:
-                    self.spinner_transfer(2, spinner=dom_tup)
+                    self.ats['SPINNER'] = dom_tup
+                    self.ats['STATE'] = 2
                 else:
-                    self.ats['STARTER'].append((dom_tup, 0))
+                    self.ats['S_RIGHT'] = dom_tup
+                    self.ats['S_LEFT'] = dom_tup
 
             if self.ats['STATE'] == 1:
                 assert direction is not None
                 if direction == Constants.LEFT:
-                    if self.ats['STARTER'][0][1] == 0:
-                        if self.ats['STARTER'][0][0][0] == dom_tup[0]:
+                    if self.ats['S_LEFT'][1] == 0:
+                        if self.ats['S_LEFT'][0][0] == dom_tup[0]:
                             if dom_tup[0] == dom_tup[1]:
-                                self.spinner_transfer(2, spinner=dom_tup, direction=Constants.LEFT)
+                                self.ats['SPINNER'] = dom_tup
+                                self.ats['RIGHT'] = (self.ats['S_RIGHT'], 0)
+                                self.ats['STATE'] = 2
                             else:
-                                self.ats['STARTER'].append_left((dom_tup, 2))
-                        elif self.ats['STARTER'][0][0][0] == dom_tup[1]:
-                            self.ats['STARTER'].append_left((dom_tup, 0))
+                                self.ats['S_LEFT'] = (dom_tup, 2)
+                        elif self.ats['S_LEFT'][0][0] == dom_tup[1]:
+                            self.ats['S_LEFT'] = (dom_tup, 0)
                     else:
-                        if self.ats['STARTER'][0][0][1] == dom_tup[0]:
+                        if self.ats['S_LEFT'][0][1] == dom_tup[0]:
                             if dom_tup[0] == dom_tup[1]:
-                                self.spinner_transfer(2, spinner=dom_tup, direction=Constants.LEFT)
+                                self.ats['SPINNER'] = dom_tup
+                                self.ats['RIGHT'] = (self.ats['S_RIGHT'], 0)
+                                self.ats['STATE'] = 2
                             else:
-                                self.ats['STARTER'].append_left((dom_tup, 0))
-                        elif self.ats['STARTER'][0][0][1] == dom_tup[1]:
-                            self.ats['STARTER'].append_left((dom_tup, 2))
+                                self.ats['S_LEFT'] = (dom_tup, 0)
+                        elif self.ats['S_LEFT'][0][1] == dom_tup[1]:
+                            self.ats['S_LEFT'] = (dom_tup, 2)
 
                 elif direction == Constants.RIGHT:
-                    if self.ats['STARTER'][-1][1] == 0:
-                        if self.ats['STARTER'][-1][0][1] == dom_tup[0]:
+                    if self.ats['S_RIGHT'][1] == 0:
+                        if self.ats['S_RIGHT'][0][1] == dom_tup[0]:
                             if dom_tup[0] == dom_tup[1]:
-                                self.spinner_transfer(2, spinner=dom_tup, direction=Constants.LEFT)
+                                self.ats['SPINNER'] = dom_tup
+                                self.ats['LEFT'] = (self.ats['S_LEFT'][0], (self.ats['S_LEFT'][1] + 2) % 4)
+                                self.ats['STATE'] = 2
                             else:
-                                self.ats['STARTER'].append((dom_tup, 0))
-                        elif self.ats['STARTER'][-1][0][1] == dom_tup[1]:
-                            self.ats['STARTER'].append((dom_tup, 2))
+                                self.ats['S_RIGHT'] = dom_tup, 0
+                        elif self.ats['S_RIGHT'][0][1] == dom_tup[1]:
+                            self.ats['S_RIGHT'] = dom_tup, 2
                     else:
-                        if self.ats['STARTER'][-1][0][0] == dom_tup[0]:
+                        if self.ats['S_RIGHT'][0][0] == dom_tup[0]:
                             if dom_tup[0] == dom_tup[1]:
-                                self.spinner_transfer(2, spinner=dom_tup, direction=Constants.LEFT)
+                                self.ats['SPINNER'] = dom_tup
+                                self.ats['LEFT'] = (self.ats['S_LEFT'][0], (self.ats['S_LEFT'][1] + 2) % 4)
+                                self.ats['STATE'] = 2
                             else:
-                                self.ats['STARTER'].append((dom_tup, 2))
-                        elif self.ats['STARTER'][-1][0][0] == dom_tup[1]:
-                            self.ats['STARTER'].append((dom_tup, 0))
+                                self.ats['S_RIGHT'] = dom_tup, 2
+                        elif self.ats['S_RIGHT'][0][0] == dom_tup[1]:
+                            self.ats['S_RIGHT'] = dom_tup, 0
 
             elif self.ats['STATE'] == 2 or self.ats['STATE'] == 3:
                 assert direction is not None
-                if self.ats[direction][-1][1] == 0 or self.ats[direction][-1][1] == 1:
-                    if self.ats[direction][-1][0][1] == dom_tup[0]:
-                        if dom_tup[0] == dom_tup[1]:
-                            self.ats[direction].append((dom_tup, 1))
-                        else:
-                            self.ats[direction].append((dom_tup, 0))
-                    elif self.ats[direction][-1][0][1] == dom_tup[1]:
-                        self.ats[direction].append((dom_tup, 2))
+                if self.ats[direction] is None:
+                    if self.ats['SPINNER'][0] == dom_tup[0]:
+                        self.ats[direction] = dom_tup, 0
+                    else:
+                        self.ats[direction] = dom_tup, 2
                 else:
-                    if self.ats[direction][-1][0][0] == dom_tup[0]:
-                        if dom_tup[0] == dom_tup[1]:
-                            self.ats[direction].append((dom_tup, 1))
-                        else:
-                            self.ats[direction].append((dom_tup, 0))
-                    elif self.ats[direction][-1][0][0] == dom_tup[1]:
-                        self.ats[direction].append((dom_tup, 2))
+                    if self.ats[direction][1] == 0 or self.ats[direction][1] == 1:
+                        if self.ats[direction][0][1] == dom_tup[0]:
+                            if dom_tup[0] == dom_tup[1]:
+                                self.ats[direction] = dom_tup, 0
+                            else:
+                                self.ats[direction].append((dom_tup, 0))
+                        elif self.ats[direction][0][1] == dom_tup[1]:
+                            self.ats[direction] = dom_tup, 2
+                    else:
+                        if self.ats[direction][0][0] == dom_tup[0]:
+                            if dom_tup[0] == dom_tup[1]:
+                                self.ats[direction] = dom_tup, 1
+                            else:
+                                self.ats[direction] = dom_tup, 0
+                        elif self.ats[direction][0][0] == dom_tup[1]:
+                            self.ats[direction] = dom_tup, 2
                 if self.ats['STATE'] == 2:
-                    if len(self.ats[Constants.LEFT]) > 0 and len(self.ats[Constants.RIGHT]) > 0:
+                    if self.ats[Constants.LEFT] is not None and self.ats[Constants.RIGHT] is not None:
                         self.ats['STATE'] = 3
+        if scores is not None:
+            self.ats['SCORES'] = scores
+        if self.outsides() % 5 == 0 and self.outsides() >= 10:
+            self.ats['SCORES'][self.ats['TURN']] += self.outsides()
 
-    def spinner_transfer(self, out_state, spinner=None, direction=None):
-        self.ats['SPINNER'] = spinner
-        if self.ats['STATE'] == 1:
-            self.ats['STARTER'] = deque()
-        elif self.ats['STATE'] == 2:
-            if direction is not None:
-                if direction == Constants.LEFT:
-                    self.ats[Constants.RIGHT] = self.ats['STARTER']
-                    self.ats['STARTER'] = None
-                else:
-                    self.ats['LEFT'] = list(reversed(self.ats['STARTER']))
-        self.ats['STATE'] = out_state
-        pass
-
-    def score(self):
+    def outsides(self):
         if self.ats['STATE'] == 0:
             return 0
         elif self.ats['STATE'] == 1:
-            left_side = self.ats['STARTER'][0][0 if self.ats['STARTER'][1] == 0 else 1]
-            right_side = self.ats['STARTER'][-1][1 if self.ats['STARTER'][1] == 0 else 0]
+            left_side = self.ats['S_LEFT'][0][0 if self.ats['S_LEFT'][1] == 0 else 1]
+            right_side = self.ats['S_RIGHT'][0][1 if self.ats['S_RIGHT'][1] == 0 else 0]
             if (left_side + right_side) % 5 == 0 and (left_side + right_side) >= 10:
                 return left_side + right_side
-        elif self.ats['STATE'] == 2:
-            if len(self.ats['LEFT']) == 0 or len(self.ats['RIGHT']) == 0:
-                pass
             else:
-                pass
-            pass
+                return 0
+        elif self.ats['STATE'] == 2:
+            if self.ats[Constants.LEFT] is None and self.ats[Constants.RIGHT] is None:
+                return sum(self.ats['SPINNER'])
+            elif self.ats[Constants.RIGHT] is None:
+                return sum(self.ats['SPINNER']) + \
+                       self.ats[Constants.LEFT][0][0 if self.ats[Constants.LEFT][1] == 2 else 1]
+            elif self.ats[Constants.LEFT] is None:
+                return sum(self.ats['SPINNER']) + \
+                       self.ats[Constants.RIGHT][0][0 if self.ats[Constants.RIGHT][1] == 2 else 1]
+            else:
+                print('how did we get here?')
         elif self.ats['STATE'] == 3:
-            pass
-        pass
-
-    def is_valid_play(self, dom_tup, orientation):
-        if self.ats['state'] == 0:
-            return True
-        elif self.ats['state'] == 1:
-            pass
+            return sum((self.ats[direction][0][0 if self.ats[direction][1] == 2 else 1]
+                        if self.ats[direction] is not None else 0) for direction in Constants.ORIENTATIONS)
         pass
 
     def __hash__(self):
         return hash(frozenset(self.ats.items()))
 
-    def play(self, dom_tup, orientation, playbook):
-        new_state = copy.copy(self.ats)
-        if self.ats['state'] == 0:
-            if dom_tup[0] == dom_tup[1]:
-                self.spinner_transfer(2, spinner=dom_tup)
-            else:
-                self.spinner_transfer(1)
-                self.ats['STARTER'].append((dom_tup, 0))
-        elif self.ats['state'] == 1:
-            pass
-        elif self.ats['state'] == 2:
-            pass
-        elif self.ats['state'] == 3:
-            pass
-        return GameState()
+    def playable(self, player):
+        if self.ats['STATE'] == 0:
+            return [(hand_item, 0) for hand_item in self.ats['HANDS'][player]]
+        elif self.ats['STATE'] == 1:
+            playable = []
+            for dom_tup in self.ats['HANDS'][player]:
+                s_left = self.ats['S_LEFT'][0][0 if self.ats['S_LEFT'][1] == 0 else 1]
+                s_right = self.ats['S_RIGHT'][0][1 if self.ats['S_RIGHT'][1] == 0 else 0]
+                if s_right == dom_tup[0] or s_right == dom_tup[1]:
+                    playable.append((dom_tup, Constants.RIGHT))
+                if s_left == dom_tup[0] or s_left == dom_tup[1]:
+                    playable.append((dom_tup, Constants.LEFT))
+            return playable
+        elif self.ats['STATE'] == 2 or self.ats['STATE'] == 3:
+            playable = []
+            for direction in [Constants.LEFT, Constants.RIGHT] if self.ats['STATE'] == 2 else Constants.ORIENTATIONS:
+                for dom_tup in self.ats['HANDS'][player]:
+                    if self.ats[direction] is not None:
+                        out_or = self.ats[direction][1]
+                        outside_val = self.ats[direction][0 if out_or == 2 else 1]
+                        if outside_val == dom_tup[0] or outside_val == dom_tup[1]:
+                            playable.append((dom_tup, direction))
+                    else:
+                        if self.ats['SPINNER'][0] == dom_tup[0] or self.ats['SPINNER'][0] == dom_tup[1]:
+                            playable.append((dom_tup, direction))
+            return playable

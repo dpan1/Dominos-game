@@ -59,15 +59,15 @@ class Player(object):
 
     def right_check(self, dom_tup):
         return self.board.branches['starter'].domino_list[-1][0][
-                   1 if self.board.branches['starter'].domino_list[-1][0] == 0 else 0] == dom_tup[0] or \
+                   0 if self.board.branches['starter'].domino_list[-1][0] == 0 else 1] == dom_tup[0] or \
                self.board.branches['starter'].domino_list[-1][0][
-                   1 if self.board.branches['starter'].domino_list[-1][0] == 0 else 0] == dom_tup[1]
+                   0 if self.board.branches['starter'].domino_list[-1][0] == 0 else 1] == dom_tup[1]
 
     def left_check(self, dom_tup):
         return self.board.branches['starter'].domino_list[0][0][
-                   0 if self.board.branches['starter'].domino_list[0][1] == 1 else 1] == dom_tup[0] or \
+                   1 if self.board.branches['starter'].domino_list[0][1] == 1 else 0] == dom_tup[0] or \
                self.board.branches['starter'].domino_list[0][0][
-                   0 if self.board.branches['starter'].domino_list[0][1] == 0 else 1] == dom_tup[1]
+                   1 if self.board.branches['starter'].domino_list[0][1] == 0 else 0] == dom_tup[1]
 
     def playable(self):  # TODO needs to calculate rewards for potential plays
         if self.board.state == 0:

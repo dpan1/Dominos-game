@@ -1,7 +1,6 @@
 import pygame
 from Constants import Constants
 from Branch import Branch
-
 # TODO rewrite this coherently as a State Machine. For better code organization if anything (keeps different state
 # TODO handling code together, by state, rather than by function)
 
@@ -147,8 +146,12 @@ class Board(pygame.Surface):
                 self.branches['starter'].domino_list[-1][1]
             return side_a + side_b
         else:
-            if self.branches[Constants.LEFT].is_empty or self.branches[Constants.RIGHT].is_empty:
-                return (2 * self.spinner[0]) + sum(branch.get_end() for branch in self.branches)
+            if len(self.branches[Constants.LEFT].domino_list) == 0 or \
+                    len(self.branches[Constants.RIGHT].domino_list) == 0:
+                return (2 * self.spinner[0]) + sum(self.branches[branch].get_score_value()
+                                                   if self.branches[branch] is not None else 0 for
+                                                   branch in self.branches.keys())
             else:
-                return sum((self.branches[orientation].get_score_value() if not self.branches[orientation].is_empty else 0)
+                return sum((self.branches[orientation].get_score_value()
+                            if len(self.branches[orientation].domino_list) > 0 else 0)
                            if self.branches[orientation] is not None else 0 for orientation in Constants.ORIENTATIONS)

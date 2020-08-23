@@ -5,6 +5,7 @@ from Hand import Hand
 from Game import Game
 from Board import Board
 from Domino import Domino
+from GameSettings import GameSettings
 
 
 def counter(start):
@@ -31,13 +32,16 @@ def main():
                            for i in range(7) for j in range(i+1)}
 
     hand_rect = pygame.Rect(0, display.BOARD_HEIGHT + 1, display.WINDOW_WIDTH, display.HAND_HEIGHT)
-    hand = Hand(hand_rect, display)
+    hand = Hand(board, hand_rect, display)
 
-    game = Game(board)
+    settings = GameSettings()
+
+    game = Game(board, settings)
     game.deal()  # players in the game are handed dominoes are divided between
 
     # default hand setting statement, comment for debugging
     hand.set_hand(game.hands[0])
+    game.set_hand(hand)  # this is a hack because I didn't set the compositions correctly in the beginning.
     # set hand before making tree
     # debugging hand setting statements
     # hand.set_hand([(6, 6), (5, 5), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
