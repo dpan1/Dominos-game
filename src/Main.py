@@ -6,7 +6,7 @@ from Game import Game
 from Board import Board
 from Domino import Domino
 from GameSettings import GameSettings
-
+import datetime
 
 def counter(start):
     num = start
@@ -18,40 +18,36 @@ def counter(start):
 def main():
     pygame.init()
     display = Proportions()  # handles changing domino proportions
-    board_click_count = counter(0)
-    hand_click_count = counter(0)
     size = display.WINDOW_WIDTH, display.WINDOW_HEIGHT
     screen = pygame.display.set_mode(size)
-    screen.fill(Constants.BLACK)
+    screen.fill(Constants.BLACK)  # I think this is a relic of the code I started with at this point
     run = True
-    # conflicted about whether Board is structured correctly, or if I should just make it an object and a rectangle
-    board_rect = pygame.Rect(0, 0, display.WINDOW_WIDTH, display.BOARD_HEIGHT)
-    board = Board(board_rect, display)
-    # Domino objects are pygame Surfaces, and contain information about rotation
+
     domino_surface_dict = {(j, i): Domino((j, i), 3, display.DOMINO_WIDTH, display.DOMINO_HEIGHT, display)
                            for i in range(7) for j in range(i+1)}
 
-    hand_rect = pygame.Rect(0, display.BOARD_HEIGHT + 1, display.WINDOW_WIDTH, display.HAND_HEIGHT)
-    hand = Hand(board, hand_rect, display)
+    board = Board(pygame.Rect(0, 0, display.WINDOW_WIDTH, display.BOARD_HEIGHT), display)
+    hand = Hand(board, pygame.Rect(0, display.BOARD_HEIGHT + 1, display.WINDOW_WIDTH, display.HAND_HEIGHT), display)
 
     settings = GameSettings()
 
     game = Game(board, settings)
     game.deal()  # players in the game are handed dominoes are divided between
-
-    # default hand setting statement, comment for debugging
     hand.set_hand(game.hands[0])
     game.set_hand(hand)  # this is a hack because I didn't set the compositions correctly in the beginning.
+    for i in range(3):
+        game.players[i + 1].set_hand(game.hands[i + 1])
+    start = datetime.datetime.now().timestamp()
+    game.automate()
+    end = datetime.datetime.now().timestamp()
+    print(f'time taken {end - start}')
+    # default hand setting statement, comment for debugging
     # set hand before making tree
     # debugging hand setting statements
     # hand.set_hand([(6, 6), (5, 5), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
     # hand.set_hand([(1, 3), (3, 4), (3, 5), (2, 5), (2, 3), (0, 6), (3, 3)])  # set a test hand
     # hand.set_hand([(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (3, 3)])  # set a test hand
 
-    for i in range(3):
-        game.players[i + 1].set_hand(game.hands[i + 1])
-
-    # game.treestrap(hand)
     hand.set_dom_width(display.DOMINO_WIDTH)
     hand.set_dom_height(display.DOMINO_HEIGHT)
 
@@ -59,6 +55,9 @@ def main():
 
     held = None
     play_made = False
+
+    board_click_count = counter(0)
+    hand_click_count = counter(0)
 
     while run:
         for event in pygame.event.get():
@@ -68,10 +67,10 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
-                    if board.rect.collidepoint(mouse_pos):
+                    if board.rect.collidepoint(mouse_pos[0], mouse_pos[1]):  # PEP makes a complaint if I don't separate
                         print(f'board clicked {next(board_click_count)} time(s) '
                               f'at pos: ({mouse_pos[0]}, {mouse_pos[1]})')
-                    if hand.rect.collidepoint(mouse_pos):
+                    if hand.rect.collidepoint(mouse_pos[0], mouse_pos[1]):
                         print(f'hand clicked {next(hand_click_count)} time(s) '
                               f'at pos: ({mouse_pos[0]}, {mouse_pos[1]})')
                     for dom_tup in domino_surface_dict.keys():
@@ -105,7 +104,7 @@ def main():
                 mouse_pos = pygame.mouse.get_pos()
 
                 if board.state == 0:
-                    if board.rect.collidepoint(mouse_pos):
+                    if board.rect.collidepoint(mouse_pos[0], mouse_pos[1]):
                         hand.remove(held)
                         domino_surface_dict[held].draggable = False
                         board.play(held)
@@ -168,12 +167,13 @@ def main():
                 game.scores[0] += board.sum_outsides()
             if len(hand.hand) == 0:
                 print('domino!')
-            game.automate(domino_surface_dict)
+            # TODO: insert a player action here.
+            pass
             play_made = False
             board.arrange(domino_surface_dict)
 
-        screen.blit(board, board_rect)
-        screen.blit(hand, hand_rect)
+        screen.blit(board, board.rect)
+        screen.blit(hand, hand.rect)
         # gotta show the dominos.
         for dom_tup in domino_surface_dict.keys():
             if domino_surface_dict[dom_tup].show_me:

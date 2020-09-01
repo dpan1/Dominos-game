@@ -21,9 +21,6 @@ class Player(object):
         choice = self.play_fun(plays)
         self.play_domino(choice[0], choice[1], dominoes)
 
-    def detective(self, playable):
-        info = self.game.information_sheet
-
     def set_hand(self, hand):
         self.hand = hand
 

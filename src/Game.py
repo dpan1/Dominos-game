@@ -1,4 +1,3 @@
-from Board import Board
 from Constants import Constants
 from GameState import GameState
 from Player import Player
@@ -6,9 +5,9 @@ import copy
 import random
 # Magic Numbers in use:
 # 4: number of players
-# 5: basic unit of dominos, also, nickel for knocking
-# 7: number of dominos to deal to a player/size of list for a player's hands. also 28/4
-# 10: minimum scoring point value for dominos
+# 5: basic unit of dominoes, also, nickel for knocking
+# 7: number of dominoes to deal to a player/size of list for a player's hands. also 28/4
+# 10: minimum scoring point value for dominoes
 
 
 class Game(object):
@@ -27,8 +26,8 @@ class Game(object):
         self.node_ht = dict()  # emphasis on using the hash
         pass
 
-    def set_hand(self, handsurf):  # as mentioned in the code that calls this
-        self.players[0] = handsurf
+    def set_hand(self, hand_surf):  # as mentioned in the code that calls this
+        self.players[0] = hand_surf
 
     def scores(self):
         # TODO return scores that line up with players.
@@ -37,22 +36,26 @@ class Game(object):
     def recur(self, parent_state, player, depth):
         if depth < 1:
             return
-        if len(parent_state.playable(player)) == 0:  # we can add 5 points to the game state by adding score=5 here
-            parent_state.children['knock'] = GameState(
-                copy.deepcopy(parent_state.ats), turn=(parent_state.ats['TURN'] + 1) % 4,
+        if len(parent_state.playable(player, self.hands)) == 0:  # we can add 5 points to the game state by adding score=5 here
+            parent_state.children['knock'] = GameState(self.hands,
+                state=copy.copy(parent_state.ats),
+                turn=(parent_state.ats['TURN'] + 1) % 4,
                 score=5 if self.settings.nickel_for_knocking else 0
             )
             self.recur(parent_state.children['knock'], (player + 1) % 4, depth - 1)
         else:
-            for play in parent_state.playable(player):
-                parent_state.children[play] = GameState(copy.deepcopy(parent_state.ats),
+            for play in parent_state.playable(player, self.hands):
+                parent_state.children[play] = GameState(self.hands, state=copy.copy(parent_state.ats),
                                                         dom_tup=play[0], direction=play[1])
                 self.recur(parent_state.children[play], (player + 1) % 4, depth - 1)
         pass
 
-    def automate(self, dominoes):
+    def automate(self):
         self.root = self.dump()
-        self.recur(self.root, 1, 7)
+        for play in self.root.playable(0, self.hands):
+            self.root.children[play[0]] = GameState(self.hands, state=copy.deepcopy(self.root.ats), dom_tup=play[0], direction=play[1])
+        for key in self.root.children.keys():
+            self.recur(self.root.children[key], 1, 27)
         pass
 
     def deal(self):
@@ -75,11 +78,11 @@ class Game(object):
             Constants.RIGHT: self._dump_branch(Constants.RIGHT),
             Constants.LEFT: self._dump_branch(Constants.LEFT),
             Constants.DOWN: self._dump_branch(Constants.DOWN),
-            'HANDS': [copy.deepcopy(player.hand) for player in self.players],
+            'HANDS': [255 for j in range(4)],  # I think it's slow because of this.
             'TURN': 0,
             'SCORES': [0 for _ in range(4)]
         }
-        return GameState(state=ats)
+        return GameState(self.hands, state=ats)
 
     def _dump_branch(self, branch_name):
         if self.board.branches[branch_name] is not None:

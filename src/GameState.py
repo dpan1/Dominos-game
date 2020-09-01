@@ -1,8 +1,8 @@
 from Constants import Constants
 
 
-class GameState(object):
-    def __init__(self, state=None, turn=None, dom_tup=None, direction=None, scores=None, score=None):
+class GameState:
+    def __init__(self, hands, state=None, turn=None, dom_tup=None, direction=None, scores=None, score=None):
         self.children = dict()
         if state is not None:
             self.ats = state
@@ -11,17 +11,19 @@ class GameState(object):
             if score is not None:
                 self.ats['SCORES'][turn] = self.outsides() + score
         if dom_tup is not None:
-            self.ats['TURN'] = ((self.ats['TURN'] + 1) % 4)
-            self.ats['HANDS'][self.ats['TURN']].remove(dom_tup)
+            # self.ats['HANDS'][self.ats['TURN']].remove(dom_tup)
+            self.ats['HANDS'][self.ats['TURN']] -= 2 ** (hands[self.ats['TURN']].index(dom_tup))
+
             if self.ats['STATE'] == 0:
                 if dom_tup[0] == dom_tup[1]:
                     self.ats['SPINNER'] = dom_tup
                     self.ats['STATE'] = 2
                 else:
-                    self.ats['S_RIGHT'] = dom_tup
-                    self.ats['S_LEFT'] = dom_tup
+                    self.ats['S_RIGHT'] = (dom_tup, 0)
+                    self.ats['S_LEFT'] = (dom_tup, 0)
+                    self.ats['STATE'] = 1
 
-            if self.ats['STATE'] == 1:
+            elif self.ats['STATE'] == 1:
                 assert direction is not None
                 if direction == Constants.LEFT:
                     if self.ats['S_LEFT'][1] == 0:
@@ -80,7 +82,7 @@ class GameState(object):
                             if dom_tup[0] == dom_tup[1]:
                                 self.ats[direction] = dom_tup, 0
                             else:
-                                self.ats[direction].append((dom_tup, 0))
+                                self.ats[direction] = dom_tup, 0
                         elif self.ats[direction][0][1] == dom_tup[1]:
                             self.ats[direction] = dom_tup, 2
                     else:
@@ -94,6 +96,9 @@ class GameState(object):
                 if self.ats['STATE'] == 2:
                     if self.ats[Constants.LEFT] is not None and self.ats[Constants.RIGHT] is not None:
                         self.ats['STATE'] = 3
+            if turn is None:
+                self.ats['TURN'] = ((self.ats['TURN'] + 1) % 4)
+
         if scores is not None:
             self.ats['SCORES'] = scores
         if self.outsides() % 5 == 0 and self.outsides() >= 10:
@@ -128,29 +133,33 @@ class GameState(object):
     def __hash__(self):
         return hash(frozenset(self.ats.items()))
 
-    def playable(self, player):
+    def playable(self, player, hands):
         if self.ats['STATE'] == 0:
-            return [(hand_item, 0) for hand_item in self.ats['HANDS'][player]]
+            return [(hand_item, 0) for hand_item in hands[player]]
         elif self.ats['STATE'] == 1:
             playable = []
-            for dom_tup in self.ats['HANDS'][player]:
-                s_left = self.ats['S_LEFT'][0][0 if self.ats['S_LEFT'][1] == 0 else 1]
-                s_right = self.ats['S_RIGHT'][0][1 if self.ats['S_RIGHT'][1] == 0 else 0]
-                if s_right == dom_tup[0] or s_right == dom_tup[1]:
-                    playable.append((dom_tup, Constants.RIGHT))
-                if s_left == dom_tup[0] or s_left == dom_tup[1]:
-                    playable.append((dom_tup, Constants.LEFT))
+            for i in range(7):
+                if self.ats['HANDS'][player] & (2 ** i):
+                    dom_tup = hands[player][i]
+                    s_left = self.ats['S_LEFT'][0][0 if self.ats['S_LEFT'][1] == 0 else 1]
+                    s_right = self.ats['S_RIGHT'][0][1 if self.ats['S_RIGHT'][1] == 0 else 0]
+                    if s_right == dom_tup[0] or s_right == dom_tup[1]:
+                        playable.append((dom_tup, Constants.RIGHT))
+                    if s_left == dom_tup[0] or s_left == dom_tup[1]:
+                        playable.append((dom_tup, Constants.LEFT))
             return playable
         elif self.ats['STATE'] == 2 or self.ats['STATE'] == 3:
             playable = []
             for direction in [Constants.LEFT, Constants.RIGHT] if self.ats['STATE'] == 2 else Constants.ORIENTATIONS:
-                for dom_tup in self.ats['HANDS'][player]:
-                    if self.ats[direction] is not None:
-                        out_or = self.ats[direction][1]
-                        outside_val = self.ats[direction][0 if out_or == 2 else 1]
-                        if outside_val == dom_tup[0] or outside_val == dom_tup[1]:
-                            playable.append((dom_tup, direction))
-                    else:
-                        if self.ats['SPINNER'][0] == dom_tup[0] or self.ats['SPINNER'][0] == dom_tup[1]:
-                            playable.append((dom_tup, direction))
+                for i in range(7):
+                    if self.ats['HANDS'][player] & (2 ** i):
+                        dom_tup = hands[player][i]
+                        if self.ats[direction] is not None:
+                            out_or = self.ats[direction][1]
+                            outside_val = self.ats[direction][0 if out_or == 2 else 1]
+                            if outside_val == dom_tup[0] or outside_val == dom_tup[1]:
+                                playable.append((dom_tup, direction))
+                        else:
+                            if self.ats['SPINNER'][0] == dom_tup[0] or self.ats['SPINNER'][0] == dom_tup[1]:
+                                playable.append((dom_tup, direction))
             return playable
